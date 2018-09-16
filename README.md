@@ -90,6 +90,11 @@ are controlled through what we call product profiles and customizations (in
 
 Next step is to fork this repository and get started making changes!
 
+## OSX requirements
+
+You will need the usual xcode buildtools plus:
+- findutils (eg. brew install findutils)
+
 ## Copyright and Licensing
 
 The CarrierWrt build system overlay is licensed under a highly permissive

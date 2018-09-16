@@ -5,6 +5,27 @@
 
 include config.mk
 
+
+OSFLAG 				:=
+ifeq ($(OS),Windows_NT)
+	OSFLAG =WIN32
+else
+	UNAME_S := $(shell uname -s)
+	ifeq ($(UNAME_S),Linux)
+		OSFLAG =LINUX
+	endif
+	ifeq ($(UNAME_S),Darwin)
+		OSFLAG =OSX
+	endif
+endif
+
+FIND 					:=
+ifeq ($(OSFLAG),OSX)
+	FIND =gfind
+else
+	FIND =find
+endif
+
 # ======================================================================
 #  Internal variables
 # ======================================================================
@@ -27,6 +48,8 @@ FWSUBDIR      := $(subst default,,$(CUSTOMIZATION))
 CHDIR_SHELL 	:= $(SHELL)
 
 BASE_DIR			:= $(PWD)
+
+
 
 define chdir
    $(eval _D=$(firstword $(1) $(@D)))
@@ -55,6 +78,7 @@ define InstallFeeds
 	     rm $(OPENWRT_DIR)/feeds.conf ; \
 	fi;
 	
+	#touch $(OPENWRT_DIR)/feeds.conf
 	cp $(OPENWRT_DIR)/feeds.conf.default $(OPENWRT_DIR)/feeds.conf
 	@while read -r file; do \
     echo $$file >> $(OPENWRT_DIR)/feeds.conf; \
@@ -89,6 +113,8 @@ define Clean
 endef
 
 # PatchOne <patchdir>
+# need brew install findutils on os x
+#find ./package -name '*.patch' -print | sed 's/\.\/package\///g' | sed 's/\(\.*\)\/[^/]*.patch$/\1/'
 define PatchOne
 	if [ -d $(1)/openwrt ]; then \
 		for f in $(1)/openwrt/*; do \
@@ -97,13 +123,13 @@ define PatchOne
 	fi
 	if [ -d $(1)/package ]; then \
 		(cd $(1) && \
-		 find package -name '*.patch' \
+		 $(FIND) package -name '*.patch' \
 			 -printf 'mkdir -p $(OPENWRT_DIR)/%h/patches && \
 								cp $(1)/%p $(OPENWRT_DIR)/%h/patches/%f\n') | sh; \
 	fi
 	if [ -d $(1)/feeds ]; then \
 		(cd $(1) && \
-		 find feeds -name '*.patch' \
+		 $(FIND) feeds -name '*.patch' \
 			 -printf 'mkdir -p $(OPENWRT_DIR)/%h/patches && \
 								cp $(1)/%p $(OPENWRT_DIR)/%h/patches/%f\n') | sh; \
 	fi
@@ -151,11 +177,8 @@ endef
 
 all: $(OPENWRT_DIR) $(OPENWRT_DIR)/feeds.conf
 	$(MAKE) _check
-	@echo "after _check"
 	$(MAKE) _build
-	@echo "after _build"
-	# $(MAKE) _info
-	@echo "after _info"
+	$(MAKE) _info
 
 help:
 	@echo "============================================================="
@@ -284,7 +307,6 @@ _build-images:
 	# Apply target patches
 	$(call Patch,$(CONFIG),common/targets/$(TARGET)/patches)
 
-after:
 	# Clean old images
 	$(call Clean,$(IMAGES))
 
