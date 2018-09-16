@@ -33,8 +33,8 @@ endif
 V ?= 0
 
 OPENWRT_DIR   := openwrt
-# OPENWRT_URL   := git://git.openwrt.org/openwrt/openwrt.git
-OPENWRT_URL   := /Volumes/Openwrt/repositories/openwrt/
+OPENWRT_URL   := git://git.openwrt.org/openwrt/openwrt.git
+#OPENWRT_URL   := /Volumes/Openwrt/repositories/openwrt/
 OPENWRT_TAG   := v17.01.6
 PACKAGES_BASE := $(OPENWRT_BASE)
 PACKAGES_URL  := $(PACKAGES_BASE)/$(CONFIG_PACKAGES_PATH)@$(CONFIG_PACKAGES_REV)
