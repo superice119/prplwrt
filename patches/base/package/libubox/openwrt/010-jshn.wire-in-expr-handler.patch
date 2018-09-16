@@ -1,0 +1,13 @@
+Index: libubox-2017-10-06-729f47fd/json_script.c
+===================================================================
+--- libubox-2017-10-06-729f47fd.orig/json_script.c
++++ libubox-2017-10-06-729f47fd/json_script.c
+@@ -417,7 +417,7 @@ static int json_process_expr(struct json
+   ret = __json_process_type(call, cur, expr, ARRAY_SIZE(expr), &found);
+   if (!found) {
+     const char *name = blobmsg_data(blobmsg_data(cur));
+-    ctx->handle_expr(ctx, name, cur, call->vars);
++    ret = ctx->handle_expr(ctx, name, cur, call->vars);
+   }
+ 
+   return ret;

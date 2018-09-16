@@ -1,5 +1,6 @@
 #
 # Copyright (C) 2013 CarrierWrt.org
+# Copyright (C) 2018 prplFoundation.org
 #
 
 include config.mk
@@ -10,16 +11,27 @@ include config.mk
 
 V ?= 0
 
-OPENWRT_BASE 	:= svn://svn.openwrt.org/openwrt
-OPENWRT_DIR  	:= openwrt
-OPENWRT_URL  	:= $(OPENWRT_BASE)/$(CONFIG_OPENWRT_PATH)@$(CONFIG_OPENWRT_REV)
-PACKAGES_BASE	:= $(OPENWRT_BASE)
-PACKAGES_URL	:= $(PACKAGES_BASE)/$(CONFIG_PACKAGES_PATH)@$(CONFIG_PACKAGES_REV)
-LUCI_BASE    	:= https://subversion.assembla.com/svn/luci
-LUCI_URL     	:= $(LUCI_BASE)/$(CONFIG_LUCI_PATH)/contrib/package@$(CONFIG_LUCI_REV)
-VERSION     	:= $(shell git describe --always | cut -c2-)
+OPENWRT_DIR   := openwrt
+# OPENWRT_URL   := git://git.openwrt.org/openwrt/openwrt.git
+OPENWRT_URL   := /Volumes/Openwrt/repositories/openwrt/
+OPENWRT_TAG   := v17.01.6
+PACKAGES_BASE := $(OPENWRT_BASE)
+PACKAGES_URL  := $(PACKAGES_BASE)/$(CONFIG_PACKAGES_PATH)@$(CONFIG_PACKAGES_REV)
+LUCI_BASE     := https://subversion.assembla.com/svn/luci
+LUCI_URL      := $(LUCI_BASE)/$(CONFIG_LUCI_PATH)/contrib/package@$(CONFIG_LUCI_REV)
+VERSION       := $(shell git describe --always | cut -c2-)
+FEEDS_FILE 		:= prpl_feeds.conf
+FEEDS					:= $(shell cat ${FEEDS_FILE})
 
-FWSUBDIR     	:= $(subst default,,$(CUSTOMIZATION))
+FWSUBDIR      := $(subst default,,$(CUSTOMIZATION))
+CHDIR_SHELL 	:= $(SHELL)
+
+BASE_DIR			:= $(PWD)
+
+define chdir
+   $(eval _D=$(firstword $(1) $(@D)))
+   $(info $(MAKE): cd $(_D)) $(eval SHELL = cd $(_D); $(CHDIR_SHELL))
+endef
 
 # Required packages
 CONFIG += CONFIG_PACKAGE_factory-defaults=y
@@ -27,12 +39,26 @@ CONFIG += CONFIG_PACKAGE_factory-defaults=y
 # Copy/override OpenWrt packages with CarrierWrt ditto
 # InstallPackages
 define InstallPackages
-	for package in package/*; do \
-		if [ -d $(OPENWRT_DIR)/$$package ]; then \
-			rm -rf $(OPENWRT_DIR)/$$package; \
-		fi; \
-		cp -r $$package $(OPENWRT_DIR)/$$package; \
-	done
+	@if ! [ -z "$(ls -A package)" ]; then \
+		for package in package/*; do \
+			if [ -d $(OPENWRT_DIR)/$$package ]; then \
+				rm -rf $(OPENWRT_DIR)/$$package; \
+			fi; \
+			cp -r $$package $(OPENWRT_DIR)/$$package; \
+		done \
+	fi
+endef
+
+define InstallFeeds
+	if [ -a $(OPENWRT_DIR)/feeds.conf ] ; \
+	then \
+	     rm $(OPENWRT_DIR)/feeds.conf ; \
+	fi;
+	
+	cp $(OPENWRT_DIR)/feeds.conf.default $(OPENWRT_DIR)/feeds.conf
+	@while read -r file; do \
+    echo $$file >> $(OPENWRT_DIR)/feeds.conf; \
+  done <$(FEEDS_FILE)
 endef
 
 # WriteConfig <line>
@@ -125,8 +151,11 @@ endef
 
 all: $(OPENWRT_DIR) $(OPENWRT_DIR)/feeds.conf
 	$(MAKE) _check
+	@echo "after _check"
 	$(MAKE) _build
-	$(MAKE) _info
+	@echo "after _build"
+	# $(MAKE) _info
+	@echo "after _info"
 
 help:
 	@echo "============================================================="
@@ -150,27 +179,26 @@ help:
 # ======================================================================
 
 _check:
-	@if ! svn info $(OPENWRT_DIR) | grep -q "Revision: $(CONFIG_OPENWRT_REV)"; then \
+	@$(call chdir,openwrt)
+	@if ! git describe --tags | grep -q "$(OPENWRT_TAG)"; then \
 		echo "WARNING: Up/downgrading openwrt. Dependency tracking may not work!"; \
-		svn update -r $(CONFIG_OPENWRT_REV) $(OPENWRT_DIR); \
+		git checkout tags/$(OPENWRT_TAG); \
 	fi
-	@svn info $(OPENWRT_DIR)/feeds/luci     | grep -q "Revision: $(CONFIG_LUCI_REV)"
-	@svn info $(OPENWRT_DIR)/feeds/packages | grep -q "Revision: $(CONFIG_PACKAGES_REV)"
 
 _info:
 	@echo "==============================================================="
 	@echo " VERSION:        $(VERSION)"
 	@if [ -z "$(PRODUCT)" ]; \
-	    then echo " PRODUCTS:       $(PRODUCTS)"; \
-	    else echo " PRODUCT:        $(PRODUCT)"; \
+			then echo " PRODUCTS:       $(PRODUCTS)"; \
+			else echo " PRODUCT:        $(PRODUCT)"; \
 	fi
 	@if [ -z "$(TARGET)" ]; \
-	    then echo " TARGET:         (all)"; \
-	    else echo " TARGET:         $(TARGET)"; \
+			then echo " TARGET:         (all)"; \
+			else echo " TARGET:         $(TARGET)"; \
 	fi
 	@if [ -z "$(CUSTOMIZATION)" ]; \
-	    then echo " CUSTOMIZATION:  (all)"; \
-	    else echo " CUSTOMIZATION:  $(CUSTOMIZATION)"; \
+			then echo " CUSTOMIZATION:  (all)"; \
+			else echo " CUSTOMIZATION:  $(CUSTOMIZATION)"; \
 	fi
 	@echo " Firmware images are in $(PWD)/firmware/"
 	@echo "==============================================================="
@@ -199,31 +227,31 @@ endif
 
 _build-products:
 	$(foreach product,$(PRODUCTS),\
-	  $(MAKE) _build-targets PRODUCT=$(product) &&) true
+		$(MAKE) _build-targets PRODUCT=$(product) &&) true
 
 _build-targets:
 	$(foreach target,$(TARGETS),\
-	  $(MAKE) _build-customizations TARGET=$(target) &&) true
+		$(MAKE) _build-customizations TARGET=$(target) &&) true
 
 _build-customizations:
 	$(foreach customization,$(CUSTOMIZATIONS),\
-	  $(MAKE) _build-images CUSTOMIZATION=$(customization) &&) true
+		$(MAKE) _build-images CUSTOMIZATION=$(customization) &&) true
 
-_build-images:
+_reset_git:
+	@$(call chdir, openwrt)
 
 	# Revert openwrt and feeds to pristine condition
-	scripts/svn-pristine $(OPENWRT_DIR) | sh
-	for feed in $(OPENWRT_DIR)/feeds/*; do \
-		if [ -d $$feed/.svn ]; then \
-			 scripts/svn-pristine $$feed | sh; \
-		fi \
-	done
+	git reset --hard
 
 	# The special 'files' dir is in svn:ignore so we need to manually delete it
 	rm -rf $(OPENWRT_DIR)/files/*
 
 	# Install packages
 	$(call InstallPackages)
+
+_build-images:
+	
+	$(MAKE) _reset_git
 
 	# Load Product
 	$(eval $(Product/$(PRODUCT)))
@@ -233,12 +261,6 @@ _build-images:
 
 	# Load Customization
 	$(eval $(Customization/$(CUSTOMIZATION)))
-
-	# HACK - Lock LuCI to specific revision
-	sed -i \
-		-e 's|^PKG_BRANCH\:=.*|PKG_BRANCH\:=$(CONFIG_LUCI_PATH)@$(CONFIG_LUCI_REV)|' \
-		-e 's|http://svn.luci.subsignal.org|https://subversion.assembla.com/svn|' \
-		$(OPENWRT_DIR)/feeds/luci/luci/Makefile
 
 	# Write version information
 	mkdir -p $(OPENWRT_DIR)/files/etc/
@@ -262,6 +284,7 @@ _build-images:
 	# Apply target patches
 	$(call Patch,$(CONFIG),common/targets/$(TARGET)/patches)
 
+after:
 	# Clean old images
 	$(call Clean,$(IMAGES))
 
@@ -269,30 +292,33 @@ _build-images:
 	$(Customization/$(CUSTOMIZATION)/prebuild)
 
 	# Build
-	$(call Build,$(CONFIG))
+	# $(call Build,$(CONFIG))
 
 	# Install
-	$(call Install,$(IMAGES),$(TESTED))
+	# $(call Install,$(IMAGES),$(TESTED))
 
 $(OPENWRT_DIR):
-	svn co $(OPENWRT_URL) $@
+	git clone $(OPENWRT_URL) $@
+	@$(call chdir,openwrt)
+	git checkout tags/$(OPENWRT_TAG) -b $(OPENWRT_TAG)
 
 $(OPENWRT_DIR)/feeds.conf: config.mk
 	# NOTE: OpenWrt "feeds install" will resolve package dependencies and
 	#       install other packages as well. To make sure those dependencies
 	#       are primarily resolved against CarrierWrt packages we need to
 	#       install them here.
+	@$(call chdir, $(BASE_DIR))
+	
 	$(call InstallPackages)
 
 	# BUG: OpenWrt "feeds update" will update to latest revisions
 	#      (regardless of @ in URL). As a workaround we do a "feeds clean".
 	$(OPENWRT_DIR)/scripts/feeds clean
 
-	echo "src-svn luci $(LUCI_URL)" > $@
-	echo "src-svn packages $(PACKAGES_URL)" >> $@
+	$(call InstallFeeds)
+
 	$(OPENWRT_DIR)/scripts/feeds update
 	$(OPENWRT_DIR)/scripts/feeds uninstall -a
-	$(OPENWRT_DIR)/scripts/feeds install $(CONFIG_LUCI_LIST)
 	$(OPENWRT_DIR)/scripts/feeds install $(CONFIG_PACKAGES_LIST)
 
 .PHONY: all help _check _info _build _build-products _build-targets _build-images

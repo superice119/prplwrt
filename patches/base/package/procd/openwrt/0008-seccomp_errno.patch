@@ -1,0 +1,59 @@
+diff --git a/jail/seccomp.c b/jail/seccomp.c
+index eeb5781..a395062 100644
+--- a/jail/seccomp.c
++++ b/jail/seccomp.c
+@@ -43,6 +43,30 @@ static void set_filter(struct sock_filter *filter, __u16 code, __u8 jt, __u8 jf,
+ 	filter->k = k;
+ }
+ 
++static __u32 convert_policy(int policy)
++{
++	__u32 result = 0;
++	switch (policy) {
++		case 0:
++			/* kill the process */
++			result = SECCOMP_RET_KILL;
++			break;
++		case 1:
++			/* notify tracer; without tracer return -1 and set errno to ENOSYS */
++			result = SECCOMP_RET_TRACE;
++			break;
++		case 2:
++			/* make system call return an error and set the errno value */
++			result = SECCOMP_RET_ERRNO;
++			break;
++		default:
++			/* do nothing */
++			result = SECCOMP_RET_KILL;
++			break;
++	}
++	return result;
++}
++
+ int install_syscall_filter(const char *argv, const char *file)
+ {
+ 	enum {
+@@ -62,6 +86,7 @@ int install_syscall_filter(const char *argv, const char *file)
+ 	struct sock_filter *filter;
+ 	struct sock_fprog prog = { 0 };
+ 	int sz = 5, idx = 0, default_policy = 0;
++	__u32 filter_policy = 0;
+ 
+ 	INFO("%s: setting up syscall filter\n", argv);
+ 
+@@ -117,12 +142,9 @@ int install_syscall_filter(const char *argv, const char *file)
+ 		set_filter(&filter[idx++], BPF_RET + BPF_K, 0, 0, SECCOMP_RET_ALLOW);
+ 	}
+ 
+-	if (default_policy)
+-		/* notify tracer; without tracer return -1 and set errno to ENOSYS */
+-		set_filter(&filter[idx], BPF_RET + BPF_K, 0, 0, SECCOMP_RET_TRACE);
+-	else
+-		/* kill the process */
+-		set_filter(&filter[idx], BPF_RET + BPF_K, 0, 0, SECCOMP_RET_KILL);
++	/* convert integer from JSON to a seccomp policy */
++	filter_policy = convert_policy(default_policy);
++	set_filter(&filter[idx], BPF_RET + BPF_K, 0, 0, filter_policy);
+ 
+ 	if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
+ 		ERROR("%s: prctl(PR_SET_NO_NEW_PRIVS) failed: %s\n", argv, strerror(errno));

@@ -1,0 +1,30 @@
+diff --git a/service/instance.c b/service/instance.c
+index 4e2dabb..0b50e1d 100644
+--- a/service/instance.c
++++ b/service/instance.c
+@@ -675,6 +675,16 @@ instance_config_changed(struct service_instance *in, struct service_instance *in
+ 	if (!in->libfilter && in_new->libfilter)
+ 		return true;
+ 
++	if (in->seccomp && in_new->seccomp)
++		if (strcmp(in->seccomp, in_new->seccomp))
++			return true;
++
++	if (in->seccomp && !in_new->seccomp)
++		return true;
++
++	if (!in->seccomp && in_new->seccomp)
++		return true;
++
+ 	return false;
+ }
+ 
+@@ -997,6 +1007,8 @@ instance_config_move(struct service_instance *in, struct service_instance *in_sr
+ 	// inteno libfilter
+ 	in->libfilter = in_src->libfilter;
+ 
++	in->seccomp = in_src->seccomp;
++
+ 	free(in->config);
+ 	in->config = in_src->config;
+ 	in_src->config = NULL;

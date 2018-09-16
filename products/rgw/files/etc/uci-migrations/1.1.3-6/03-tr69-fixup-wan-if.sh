@@ -1,1 +1,0 @@
-../../../../../../common/uci-migrations/tr69/fixup-wan-if.sh

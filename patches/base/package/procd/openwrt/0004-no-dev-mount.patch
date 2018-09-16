@@ -1,0 +1,61 @@
+diff --git a/initd/early.c b/initd/early.c
+index bf519f6..65a7ddf 100644
+--- a/initd/early.c
++++ b/initd/early.c
+@@ -50,27 +50,49 @@ early_console(const char *dev)
+ 	fcntl(STDERR_FILENO, F_SETFL, fcntl(STDERR_FILENO, F_GETFL) | O_NONBLOCK);
+ }
+ 
++// Mount dir if it's not yet mounted by a boot script. Print any error.
++static int
++conditional_mount(const char *source, const char *target,
++		const char *filesystemtype, unsigned long mountflags,
++		const void *data)
++{
++	struct stat targetStat, parentStat;
++	char parent[64];
++
++	errno = ENAMETOOLONG;
++
++	if ((snprintf(parent, sizeof(parent), "%s/..", target) >= sizeof(parent) ||
++			stat(target, &targetStat) || stat(parent, &parentStat)) ||
++			(targetStat.st_dev == parentStat.st_dev &&
++			mount(source, target, filesystemtype, mountflags, data))) {
++		fprintf(stderr, "Error mounting %s: %s\n", target, strerror(errno));
++		return -1;
++	}
++
++	return 0;
++}
++
+ static void
+ early_mounts(void)
+ {
+ 	unsigned int oldumask = umask(0);
+ 
+-	mount("proc", "/proc", "proc", MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_NOSUID, 0);
+-	mount("sysfs", "/sys", "sysfs", MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_NOSUID, 0);
+-	mount("cgroup", "/sys/fs/cgroup", "cgroup",  MS_NODEV | MS_NOEXEC | MS_NOSUID, 0);
+-	mount("tmpfs", "/dev", "tmpfs", MS_NOATIME | MS_NOSUID, "mode=0755,size=512K");
++	conditional_mount("proc", "/proc", "proc", MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_NOSUID, 0);
++	conditional_mount("sysfs", "/sys", "sysfs", MS_NOATIME | MS_NODEV | MS_NOEXEC | MS_NOSUID, 0);
++	conditional_mount("cgroup", "/sys/fs/cgroup", "cgroup",  MS_NODEV | MS_NOEXEC | MS_NOSUID, 0);
++	conditional_mount("tmpfs", "/dev", "tmpfs", MS_NOATIME | MS_NOSUID, "mode=0755,size=512K");
+ 	ignore(symlink("/tmp/shm", "/dev/shm"));
+ 	mkdir("/dev/pts", 0755);
+-	mount("devpts", "/dev/pts", "devpts", MS_NOATIME | MS_NOEXEC | MS_NOSUID, "mode=600");
++	conditional_mount("devpts", "/dev/pts", "devpts", MS_NOATIME | MS_NOEXEC | MS_NOSUID, "mode=600");
+ 	early_dev();
+ 
+ 	early_console("/dev/console");
+ 	if (mount_zram_on_tmp()) {
+-		mount("tmpfs", "/tmp", "tmpfs", MS_NOSUID | MS_NODEV | MS_NOATIME, 0);
++		conditional_mount("tmpfs", "/tmp", "tmpfs", MS_NOSUID | MS_NODEV | MS_NOATIME, 0);
+ 		mkdir("/tmp/shm", 01777);
+ 	} else {
+ 		mkdir("/tmp/shm", 01777);
+-		mount("tmpfs", "/tmp/shm", "tmpfs", MS_NOSUID | MS_NODEV | MS_NOATIME,
++		conditional_mount("tmpfs", "/tmp/shm", "tmpfs", MS_NOSUID | MS_NODEV | MS_NOATIME,
+ 				"mode=01777");
+ 	}
+ 	mkdir("/tmp/run", 0755);
