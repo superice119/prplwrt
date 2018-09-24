@@ -1,0 +1,52 @@
+From bc4385d2cacce16bffa031bb2a48acee7ac290ba Mon Sep 17 00:00:00 2001
+From: Denis Osvald <denis.osvald@sartura.hr>
+Date: Thu, 7 Jul 2016 14:57:29 +0200
+Subject: [PATCH 1/4] session: expose username getter in rpcd/session.h
+
+Signed-off-by: Denis Osvald <denis.osvald@sartura.hr>
+---
+ include/rpcd/session.h |  2 ++
+ session.c              | 19 +++++++++++++++++++
+ 2 files changed, 21 insertions(+)
+
+diff --git a/include/rpcd/session.h b/include/rpcd/session.h
+index 03fffd2..afabc30 100644
+--- a/include/rpcd/session.h
++++ b/include/rpcd/session.h
+@@ -81,4 +81,6 @@ void rpc_session_destroy_cb(struct rpc_session_cb *cb);
+ void rpc_session_freeze(void);
+ void rpc_session_thaw(void);
+ 
++const char *rpc_session_get_username(struct blob_attr *sid);
++
+ #endif
+diff --git a/session.c b/session.c
+index 951201b..d3e693c 100644
+--- a/session.c
++++ b/session.c
+@@ -1395,3 +1395,22 @@ void rpc_session_thaw(void)
+ 
+ 	uci_free_context(uci);
+ }
++
++const char *rpc_session_get_username(struct blob_attr *sid)
++{
++	struct rpc_session *ses;
++	struct rpc_session_data *data;
++
++	if (!sid)
++		return NULL;
++
++	ses = rpc_session_get(blobmsg_get_string(sid));
++	if (!ses)
++		return "";
++
++	data = avl_find_element(&ses->data, "username", data, avl);
++	if (!data)
++		return "";
++
++	return blobmsg_get_string(data->attr);
++}
+-- 
+2.9.0
+

@@ -1,0 +1,113 @@
+diff --git a/file.c b/file.c
+index a09e9de..11c0157 100644
+--- a/file.c
++++ b/file.c
+@@ -176,6 +176,43 @@ rpc_check_path(struct blob_attr *msg, char **path, struct stat *s)
+ 	return tb;
+ }
+ 
++/* restrict that pathptr path starts with prefix
++* for example: /tmp/dummy.log starts with /tmp
++* note: this does not work when pathptr is a dead softlink from outside
++* the restricted path to (under the restricted path).
++*/
++static int
++rpc_restrict_path(char *pathptr, char *prefix)
++{
++	size_t pathlen = strlen(pathptr);
++	char path[PATH_MAX] = {0}, resolved_path[PATH_MAX] = {0}, *slash;
++
++	if (!pathptr || pathlen <= 0 || pathlen >= PATH_MAX)
++		return UBUS_STATUS_INVALID_ARGUMENT;
++
++	strncpy(path, pathptr, pathlen);
++	/* get realpath of /path/to/file */
++	if (realpath(path, resolved_path) == NULL) {
++		slash = strrchr(path, '/');
++		if (!slash)
++			return UBUS_STATUS_INVALID_ARGUMENT;
++		memset(slash, 0, pathlen - (size_t)(slash - path));
++		/* get realpath of /path/to */
++		if (realpath(path, resolved_path) == NULL)
++			return UBUS_STATUS_INVALID_ARGUMENT;
++	}
++	/* reject paths that do not start with prefix, e.g. /tmp */
++	if (strncmp(resolved_path, prefix, strlen(prefix)) != 0)
++		return UBUS_STATUS_PERMISSION_DENIED;
++
++	/* reject paths like /tmpdir */
++	if (resolved_path[strlen(prefix)] != '/' &&
++		resolved_path[strlen(prefix)] != '\0')
++		return UBUS_STATUS_PERMISSION_DENIED;
++
++	return UBUS_STATUS_OK;
++}
++
+ static int
+ rpc_file_read(struct ubus_context *ctx, struct ubus_object *obj,
+               struct ubus_request_data *req, const char *method,
+@@ -263,6 +300,26 @@ out:
+ }
+ 
+ static int
++rpc_file_read_tmp_juci(struct ubus_context *ctx, struct ubus_object *obj,
++              struct ubus_request_data *req, const char *method,
++              struct blob_attr *msg)
++{
++	struct blob_attr *tb[__RPC_F_RB_MAX];
++	int rv;
++
++	blobmsg_parse(rpc_file_rb_policy, __RPC_F_RB_MAX, tb, blob_data(msg), blob_len(msg));
++
++	if (!tb[RPC_F_RB_PATH])
++		return UBUS_STATUS_INVALID_ARGUMENT;
++
++	rv = rpc_restrict_path(blobmsg_get_string(tb[RPC_F_RB_PATH]), "/tmp/juci");
++	if (rv)
++		return rv;
++
++	return rpc_file_read(ctx, obj, req, method, msg);
++}
++
++static int
+ rpc_file_write(struct ubus_context *ctx, struct ubus_object *obj,
+                struct ubus_request_data *req, const char *method,
+                struct blob_attr *msg)
+@@ -322,6 +379,27 @@ out:
+ }
+ 
+ static int
++rpc_file_write_tmp_juci(struct ubus_context *ctx, struct ubus_object *obj,
++               struct ubus_request_data *req, const char *method,
++               struct blob_attr *msg)
++{
++	struct blob_attr *tb[__RPC_F_RW_MAX];
++	int rv;
++
++	blobmsg_parse(rpc_file_rw_policy, __RPC_F_RW_MAX, tb,
++	              blob_data(msg), blob_len(msg));
++
++	if (!tb[RPC_F_RW_PATH])
++		return UBUS_STATUS_INVALID_ARGUMENT;
++
++	rv = rpc_restrict_path(blobmsg_get_string(tb[RPC_F_RW_PATH]), "/tmp/juci");
++	if (rv)
++		return rv;
++
++	return rpc_file_write(ctx, obj, req, method, msg);
++}
++
++static int
+ rpc_file_md5(struct ubus_context *ctx, struct ubus_object *obj,
+              struct ubus_request_data *req, const char *method,
+              struct blob_attr *msg)
+@@ -726,7 +804,9 @@ rpc_file_api_init(const struct rpc_daemon_ops *o, struct ubus_context *ctx)
+ {
+ 	static const struct ubus_method file_methods[] = {
+ 		UBUS_METHOD("read",    rpc_file_read,  rpc_file_rb_policy),
++		UBUS_METHOD("read_tmp_juci",    rpc_file_read_tmp_juci,  rpc_file_rb_policy),
+ 		UBUS_METHOD("write",   rpc_file_write, rpc_file_rw_policy),
++		UBUS_METHOD("write_tmp_juci",   rpc_file_write_tmp_juci, rpc_file_rw_policy),
+ 		UBUS_METHOD("list",    rpc_file_list,  rpc_file_r_policy),
+ 		UBUS_METHOD("stat",    rpc_file_stat,  rpc_file_r_policy),
+ 		UBUS_METHOD("md5",     rpc_file_md5,   rpc_file_r_policy),

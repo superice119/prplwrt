@@ -1,0 +1,89 @@
+From c31d67532fb50969a46b578050ef8ec6190f3f14 Mon Sep 17 00:00:00 2001
+From: Denis Osvald <denis.osvald@sartura.hr>
+Date: Wed, 14 Sep 2016 13:32:17 +0200
+Subject: [PATCH] session: add restrict_source option to login
+
+With this change, rpcd checks uci option restrict_source against
+_owsd_listener parameter on login.
+
+Signed-off-by: Denis Osvald <denis.osvald@sartura.hr>
+---
+ session.c | 31 +++++++++++++++++++++++++++----
+ 1 file changed, 27 insertions(+), 4 deletions(-)
+
+diff --git a/session.c b/session.c
+index d3e693c..ad0858c 100644
+--- a/session.c
++++ b/session.c
+@@ -120,11 +120,13 @@ enum {
+ 	RPC_L_USERNAME,
+ 	RPC_L_PASSWORD,
+ 	RPC_L_TIMEOUT,
++	RPC_L_OWSD_LISTENER,
+ 	__RPC_L_MAX,
+ };
+ static const struct blobmsg_policy login_policy[__RPC_L_MAX] = {
+ 	[RPC_L_USERNAME] = { .name = "username", .type = BLOBMSG_TYPE_STRING },
+ 	[RPC_L_PASSWORD] = { .name = "password", .type = BLOBMSG_TYPE_STRING },
++	[RPC_L_OWSD_LISTENER] = { .name = "_owsd_listen", .type = BLOBMSG_TYPE_STRING },
+ 	[RPC_L_TIMEOUT]  = { .name = "timeout", .type = BLOBMSG_TYPE_INT32 },
+ };
+ 
+@@ -827,7 +829,7 @@ rpc_login_test_password(const char *hash, const char *password)
+ 
+ static struct uci_section *
+ rpc_login_test_login(struct uci_context *uci,
+-                     const char *username, const char *password)
++                     const char *username, const char *password, const char *listen_source)
+ {
+ 	struct uci_package *p = NULL;
+ 	struct uci_section *s;
+@@ -867,6 +869,26 @@ rpc_login_test_login(struct uci_context *uci,
+ 		if (!password)
+ 			return ptr.s;
+ 
++		ptr.option = "owsd_listen";
++		ptr.o = NULL;
++		if (listen_source && !uci_lookup_ptr(uci, &ptr, NULL, true) && ptr.o) {
++			if (ptr.o->type == UCI_TYPE_STRING) {
++				if (strcmp(listen_source, ptr.o->v.string))
++					continue;
++			} else if (ptr.o->type == UCI_TYPE_LIST) {
++				struct uci_element *rs_el;
++				bool found = false;
++				uci_foreach_element(&ptr.o->v.list, rs_el) {
++					if (!strcmp(listen_source, rs_el->name)) {
++						found = true;
++						break;
++					}
++				}
++				if (!found)
++					continue;
++			}
++		}
++
+ 		/* test for matching password */
+ 		ptr.option = "password";
+ 		ptr.o = NULL;
+@@ -1112,7 +1134,8 @@ rpc_handle_login(struct ubus_context *ctx, struct ubus_object *obj,
+ 	}
+ 
+ 	login = rpc_login_test_login(uci, blobmsg_get_string(tb[RPC_L_USERNAME]),
+-	                                  blobmsg_get_string(tb[RPC_L_PASSWORD]));
++	                                  blobmsg_get_string(tb[RPC_L_PASSWORD]),
++									  blobmsg_get_string(tb[RPC_L_OWSD_LISTENER]));
+ 
+ 	if (!login) {
+ 		rv = UBUS_STATUS_PERMISSION_DENIED;
+@@ -1260,7 +1283,7 @@ rpc_session_from_blob(struct uci_context *uci, struct blob_attr *attr)
+ 	}
+ 
+ 	if (uci && user) {
+-		login = rpc_login_test_login(uci, user, NULL);
++		login = rpc_login_test_login(uci, user, NULL, NULL);
+ 		if (login)
+ 			rpc_login_setup_acls(ses, login);
+ 	}
+-- 
+2.9.3
+
