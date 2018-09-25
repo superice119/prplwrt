@@ -5,26 +5,8 @@
 
 include config.mk
 
-
-OSFLAG 				:=
-ifeq ($(OS),Windows_NT)
-	OSFLAG =WIN32
-else
-	UNAME_S := $(shell uname -s)
-	ifeq ($(UNAME_S),Linux)
-		OSFLAG =LINUX
-	endif
-	ifeq ($(UNAME_S),Darwin)
-		OSFLAG =OSX
-	endif
-endif
-
-FIND 					:=
-ifeq ($(OSFLAG),OSX)
-	FIND =gfind
-else
-	FIND =find
-endif
+### OS X
+## brew reinstall findutils --with-default-names
 
 # ======================================================================
 #  Internal variables
@@ -48,8 +30,6 @@ FWSUBDIR      := $(subst default,,$(CUSTOMIZATION))
 CHDIR_SHELL 	:= $(SHELL)
 
 BASE_DIR			:= $(PWD)
-
-
 
 define chdir
    $(eval _D=$(firstword $(1) $(@D)))
@@ -87,7 +67,7 @@ endef
 
 # WriteConfig <line>
 define WriteConfig
-	echo $(1) >> $(OPENWRT_DIR)/.config
+	@echo $(1) | sed -e 's/%22/\#/g' | sed -e 's/%20/\ /g'  >> $(OPENWRT_DIR)/.config
 endef
 
 # Generate an OpenWrt config file for a given target
@@ -123,13 +103,13 @@ define PatchOne
 	fi
 	if [ -d $(1)/package ]; then \
 		(cd $(1) && \
-		 $(FIND) package -name '*.patch' \
+		 find package -name '*.patch' \
 			 -printf 'mkdir -p $(OPENWRT_DIR)/%h/patches && \
 								cp $(1)/%p $(OPENWRT_DIR)/%h/patches/%f\n') | sh; \
 	fi
 	if [ -d $(1)/feeds ]; then \
 		(cd $(1) && \
-		 $(FIND) feeds -name '*.patch' \
+		 find feeds -name '*.patch' \
 			 -printf 'mkdir -p $(OPENWRT_DIR)/%h/patches && \
 								cp $(1)/%p $(OPENWRT_DIR)/%h/patches/%f\n') | sh; \
 	fi
@@ -194,7 +174,7 @@ help:
 	@echo ""
 	@echo "EXAMPLES:"
 	@echo "    make"
-	@echo "    make PRODUCT=rgw TARGET=ar71xx"
+	@echo "    make PRODUCT=router TARGET=intel"
 	@echo "============================================================="
 
 # ======================================================================
@@ -314,10 +294,10 @@ _build-images:
 	$(Customization/$(CUSTOMIZATION)/prebuild)
 
 	# Build
-	# $(call Build,$(CONFIG))
+	$(call Build,$(CONFIG))
 
 	# Install
-	# $(call Install,$(IMAGES),$(TESTED))
+	$(call Install,$(IMAGES),$(TESTED))
 
 $(OPENWRT_DIR):
 	git clone $(OPENWRT_URL) $@

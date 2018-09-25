@@ -11,9 +11,10 @@ CONFIG_LUCI_LIST = luci
 # Packages revision/branch/tag
 CONFIG_PACKAGES_PATH = /branches/packages_12.09
 CONFIG_PACKAGES_REV  = $(CONFIG_OPENWRT_REV)
-CONFIG_PACKAGES_LIST = owsd juci 
+CONFIG_PACKAGES_LIST = owsd juci rpcd
 
 # Base configuration
 CONFIG = \
 	CONFIG_BUSYBOX_CONFIG_WATCHDOG=n \
-	CONFIG_PACKAGE_watchdog=y
+	CONFIG_PACKAGE_watchdog=y \
+	CONFIG_OWSD_USE_UBUS=y
