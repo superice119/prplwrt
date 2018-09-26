@@ -58,6 +58,12 @@ define InstallFeeds
   done <$(FEEDS_FILE)
 endef
 
+define resetGit
+	cd $(BASE_DIR)/openwrt; \
+	git reset --hard; \
+	rm -rf $(OPENWRT_DIR)/files/*
+endef
+
 # WriteConfig <line>
 define WriteConfig
 	echo $(1) | sed -e 's/%22/\#/g' | sed -e 's/%20/\ /g'  >> $(OPENWRT_DIR)/.config
@@ -68,7 +74,7 @@ endef
 define Configure
 	rm -f $(OPENWRT_DIR)/.config
 	$(foreach line,$(1),$(call WriteConfig,$(line)) &&) true
-	$(MAKE) MAKEOVERRIDES='' -C $(OPENWRT_DIR) defconfig > /dev/null
+	$(MAKE) MAKEOVERRIDES='' -C $(OPENWRT_DIR) defconfig
 endef
 
 # CleanImage <image>
@@ -120,7 +126,7 @@ endef
 # Build <config>
 define Build
 	$(call Configure,$(1))
-	$(MAKE) MAKEOVERRIDES='' -C $(OPENWRT_DIR) V=$(V)
+	$(MAKE) MAKEOVERRIDES='' -j24 -C $(OPENWRT_DIR) V=$(V)
 endef
 
 # ImageName <img>
@@ -175,8 +181,8 @@ help:
 # ======================================================================
 
 _check:
-	@$(call chdir,openwrt)
-	@if ! git describe --tags | grep -q "$(OPENWRT_TAG)"; then \
+	cd $(BASE_DIR)/openwrt && \
+	if ! git describe --tags | grep -q "$(OPENWRT_TAG)"; then \
 		echo "WARNING: Up/downgrading openwrt. Dependency tracking may not work!"; \
 		git checkout tags/$(OPENWRT_TAG); \
 	fi
@@ -233,21 +239,11 @@ _build-customizations:
 	$(foreach customization,$(CUSTOMIZATIONS),\
 		$(MAKE) _build-images CUSTOMIZATION=$(customization) &&) true
 
-_reset_git:
-	@$(call chdir, openwrt)
-
-	# Revert openwrt and feeds to pristine condition
-	git reset --hard
-
-	# The special 'files' dir is in svn:ignore so we need to manually delete it
-	rm -rf $(OPENWRT_DIR)/files/*
-
-	# Install packages
-	$(call InstallPackages)
-
 _build-images:
-	
-	$(MAKE) _reset_git
+
+	$(call resetGit)
+
+	$(call InstallPackages)
 
 	# Load Product
 	$(eval $(Product/$(PRODUCT)))
@@ -297,15 +293,13 @@ _build-images:
 
 $(OPENWRT_DIR):
 	git clone $(OPENWRT_URL) $@
-	@$(call chdir,openwrt)
-	git checkout tags/$(OPENWRT_TAG) -b $(OPENWRT_TAG)
+	cd $(BASE_DIR)/openwrt; git checkout tags/$(OPENWRT_TAG) -b $(OPENWRT_TAG)
 
 $(OPENWRT_DIR)/feeds.conf: config.mk
 	# NOTE: OpenWrt "feeds install" will resolve package dependencies and
 	#       install other packages as well. To make sure those dependencies
 	#       are primarily resolved against CarrierWrt packages we need to
 	#       install them here.
-	@$(call chdir, $(BASE_DIR))
 	
 	$(call InstallPackages)
 
@@ -318,5 +312,6 @@ $(OPENWRT_DIR)/feeds.conf: config.mk
 	$(OPENWRT_DIR)/scripts/feeds update
 	$(OPENWRT_DIR)/scripts/feeds uninstall -a
 	$(OPENWRT_DIR)/scripts/feeds install $(CONFIG_PACKAGES_LIST)
+	$(OPENWRT_DIR)/scripts/feeds install -a
 
 .PHONY: all help _check _info _build _build-products _build-targets _build-images
