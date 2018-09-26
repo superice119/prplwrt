@@ -51,7 +51,7 @@ headers. For example, on a Debian based system run the command:
 ```
   apt-get install -y git subversion gcc g++ binutils patch bzip2 flex make \
                      gettext pkg-config unzip libz-dev libncurses-dev gawk \
-                     gcc-multilib
+                     gcc-multilib python2.7
 ```
 
 Then:
