@@ -5,6 +5,9 @@
 # Target: intel
 #
 
+
+# TODO: checkout for the target code from remote git
+
 define Target/intel
 
   CONFIG += \
@@ -313,4 +316,9 @@ define Target/intel
     %22%20CONFIG_TARGET_ar71xx_mikrotik%20is%20not%20set%20\
     %22%20CONFIG_TARGET_ar71xx_nand%20is%20not%20set
 
+endef
+
+define Target/intel/prepare
+	@rm -rf $(BASE_DIR)/$(OPENWRT_DIR)/target/linux/intel
+	@cp -R $(BASE_DIR)/common/targets/intel/openwrt_target $(BASE_DIR)/$(OPENWRT_DIR)/target/linux/intel
 endef

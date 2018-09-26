@@ -17,13 +17,7 @@ V ?= 0
 OPENWRT_DIR   := openwrt
 OPENWRT_URL   := git://git.openwrt.org/openwrt/openwrt.git
 #OPENWRT_URL   := /Volumes/Openwrt/repositories/openwrt/
-OPENWRT_TAG   := v17.01.6
-PACKAGES_BASE := $(OPENWRT_BASE)
-PACKAGES_URL  := $(PACKAGES_BASE)/$(CONFIG_PACKAGES_PATH)@$(CONFIG_PACKAGES_REV)
-LUCI_BASE     := https://subversion.assembla.com/svn/luci
-LUCI_URL      := $(LUCI_BASE)/$(CONFIG_LUCI_PATH)/contrib/package@$(CONFIG_LUCI_REV)
 VERSION       := $(shell git describe --always | cut -c2-)
-FEEDS_FILE 		:= prpl_feeds.conf
 FEEDS					:= $(shell cat ${FEEDS_FILE})
 
 FWSUBDIR      := $(subst default,,$(CUSTOMIZATION))
@@ -58,8 +52,7 @@ define InstallFeeds
 	     rm $(OPENWRT_DIR)/feeds.conf ; \
 	fi;
 	
-	#touch $(OPENWRT_DIR)/feeds.conf
-	cp $(OPENWRT_DIR)/feeds.conf.default $(OPENWRT_DIR)/feeds.conf
+	touch $(OPENWRT_DIR)/feeds.conf
 	@while read -r file; do \
     echo $$file >> $(OPENWRT_DIR)/feeds.conf; \
   done <$(FEEDS_FILE)
@@ -67,7 +60,7 @@ endef
 
 # WriteConfig <line>
 define WriteConfig
-	@echo $(1) | sed -e 's/%22/\#/g' | sed -e 's/%20/\ /g'  >> $(OPENWRT_DIR)/.config
+	echo $(1) | sed -e 's/%22/\#/g' | sed -e 's/%20/\ /g'  >> $(OPENWRT_DIR)/.config
 endef
 
 # Generate an OpenWrt config file for a given target
@@ -277,6 +270,9 @@ _build-images:
 
 	# Apply target changes
 	-cp -rL products/$(PRODUCT)/targets/$(TARGET)/files/* $(OPENWRT_DIR)/files/
+
+	# Target prepare
+	$(Target/$(TARGET)/prepare)
 
 	# Apply base patches
 	$(call Patch,$(CONFIG),patches)

@@ -2,15 +2,10 @@
 # OpenWrt SVN revision/branch/tag
 # CONFIG_OPENWRT_PATH = branches/attitude_adjustment
 # CONFIG_OPENWRT_REV  = 40431
+OPENWRT_TAG   := v17.01.6
 
-# LuCI SVN revision/branch/tag
-CONFIG_LUCI_PATH = branches/luci-0.11+svn9964
-CONFIG_LUCI_REV  = 2
-CONFIG_LUCI_LIST = luci
+FEEDS_FILE 		:= prpl_feeds.conf
 
-# Packages revision/branch/tag
-CONFIG_PACKAGES_PATH = /branches/packages_12.09
-CONFIG_PACKAGES_REV  = $(CONFIG_OPENWRT_REV)
 CONFIG_PACKAGES_LIST = owsd juci rpcd
 
 # Base configuration
