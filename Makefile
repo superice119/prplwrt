@@ -14,6 +14,8 @@ include config.mk
 
 V ?= 0
 
+j ?= 24
+
 OPENWRT_DIR   := openwrt
 OPENWRT_URL   := git://git.openwrt.org/openwrt/openwrt.git
 #OPENWRT_URL   := /Volumes/Openwrt/repositories/openwrt/
@@ -126,7 +128,7 @@ endef
 # Build <config>
 define Build
 	$(call Configure,$(1))
-	$(MAKE) MAKEOVERRIDES='' -j24 -C $(OPENWRT_DIR) V=$(V)
+	$(MAKE) MAKEOVERRIDES='' -j$(j) -C $(OPENWRT_DIR) V=$(V)
 endef
 
 # ImageName <img>
@@ -144,7 +146,7 @@ define Install
 	mkdir -p firmware/$(PRODUCT)/$(FWSUBDIR)/untested
 	$(foreach image,$(1), \
 		$(call InstallImage, \
-			$(OPENWRT_DIR)/bin/$(image), \
+			$(OPENWRT_DIR)/bin/targets/$(image), \
 			firmware/$(PRODUCT)/$(FWSUBDIR)$(if \
 				$(findstring $(image),$(2)),,/untested))
 	) 
@@ -288,8 +290,7 @@ _build-images:
 	# Build
 	$(call Build,$(CONFIG))
 
-	# Install
-	$(call Install,$(IMAGES),$(TESTED))
+	# Install $    (call Install,$(IMAGES),$(TESTED))
 
 $(OPENWRT_DIR):
 	git clone $(OPENWRT_URL) $@
