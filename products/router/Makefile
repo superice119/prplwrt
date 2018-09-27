@@ -8,9 +8,9 @@
 define Product/router
 
 	CONFIG += \
-		CONFIG_PACKAGE_luci=n \
-		CONFIG_PACKAGE_juci=y \
-		CONFIG_PACKAGE_owsd=y 
+		CONFIG_PACKAGE_luci=y \
+		CONFIG_PACKAGE_juci=n \
+		CONFIG_PACKAGE_owsd=n 
 			
 endef
 
