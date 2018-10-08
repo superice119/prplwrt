@@ -17,7 +17,7 @@ V ?= 0
 j ?= 24
 
 OPENWRT_DIR   := openwrt
-OPENWRT_URL   := git://git.openwrt.org/openwrt/openwrt.git
+OPENWRT_URL   := https://git.openwrt.org/openwrt/openwrt.git
 #OPENWRT_URL   := /Volumes/Openwrt/repositories/openwrt/
 VERSION       := $(shell git describe --always | cut -c2-)
 FEEDS					:= $(shell cat ${FEEDS_FILE})
