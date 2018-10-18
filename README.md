@@ -4,12 +4,12 @@
 
 ## Quick start
 git clone https://github.com/prplfoundation/prplwrt.git
+
 cd prplwrt
+
 make PRODUCT=router TARGET=intel
 
-... wait ...
-
-You migt have to enter your github username & password
+You might have to enter your github username & password
 
 find images in prplwrt/openwrt/bin/targets/intel/
 
