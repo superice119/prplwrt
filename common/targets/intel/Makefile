@@ -11,9 +11,9 @@
 define Target/intel
 
   CONFIG += \
-    CONFIG_TARGET_intel=y \
-    CONFIG_TARGET_intel_xrx500=y \
-    CONFIG_TARGET_intel_xrx500_DEVICE_EASY350=y \
+    CONFIG_TARGET_intel_mips=y \
+    CONFIG_TARGET_intel_mips_xrx500=y \
+    CONFIG_TARGET_intel_mips_xrx500_Default=y \
     CONFIG_TARGET_ROOTFS_JFFS2=n \
     CONFIG_KERNEL_MODULES=y \
     %22%20CONFIG_TARGET_ar71xx_generic%20is%20not%20set \
@@ -318,7 +318,47 @@ define Target/intel
 
 endef
 
+
+define Target/intel/patch
+    echo "applying target patches"
+    for f in $(BASE_DIR)/common/targets/intel/patches/*; do \
+        (cd $(BASE_DIR)/$(OPENWRT_DIR) && patch -p1 < $$f); \
+    done;
+endef
+
 define Target/intel/prepare
-	@rm -rf $(BASE_DIR)/$(OPENWRT_DIR)/target/linux/intel
-	@cp -R $(BASE_DIR)/common/targets/intel/openwrt_target $(BASE_DIR)/$(OPENWRT_DIR)/target/linux/intel
+    
+    ## remove old repo folder
+    -rm -rf $(BASE_DIR)/common/targets/intel/intel_repo
+    
+    ## create empty repo folder
+    -mkdir $(BASE_DIR)/common/targets/intel/intel_repo
+
+    ## init repo and sync
+    cd $(BASE_DIR)/common/targets/intel/intel_repo; \
+    repo init -u https://github.com/prplfoundation/intel_repo.git -b github; \
+    repo sync;
+
+    # remove broken patch
+    -rm $(BASE_DIR)/common/targets/intel/intel_repo/feed_intel/intel_mips/patches-4.9/101-revert-mips_highmem_offset.patch
+    -rm $(BASE_DIR)/common/targets/intel/intel_repo/feed_intel/intel_mips/patches-4.9/200-add-intel-xrx500.patch
+
+    # copy files over to openwrt build directory
+    mkdir -p $(BASE_DIR)/$(OPENWRT_DIR)/dl/
+    cp $(BASE_DIR)/common/targets/intel/intel_repo/dl/* $(BASE_DIR)/$(OPENWRT_DIR)/dl/
+
+    ## add feed
+    if ! grep -q "src-link feed_intel" "$(BASE_DIR)/$(OPENWRT_DIR)/feeds.conf"; then \
+      echo "src-link feed_intel $(BASE_DIR)/common/targets/intel/intel_repo/feed_intel" >> $(BASE_DIR)/$(OPENWRT_DIR)/feeds.conf; \
+    fi
+   
+    ## patch openwrt folder
+    $(call Target/intel/patch)
+    
+    ## update the feeds and install needed packages
+    cd $(BASE_DIR)/$(OPENWRT_DIR)/; \
+    ./scripts/feeds update -a; \
+    ./scripts/feeds install intel_mips ltq_fw_PHY_IP luci dsl-vr11-firmware-xdsl dsl-cpe-mei-vrx dsl-cpe-api-vrx dsl-cpe-control-vrx ifxos directconnect_dp vrx518_aca_fw vrx518_ppe_fw vrx518_tc_drv ppa;
+    rm tmp -rf 
+
 endef
