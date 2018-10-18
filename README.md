@@ -3,11 +3,13 @@
 ==========
 
 ## Quick start
+```
 git clone https://github.com/prplfoundation/prplwrt.git
 
 cd prplwrt
 
 make PRODUCT=router TARGET=intel
+```
 
 You might have to enter your github username & password
 
