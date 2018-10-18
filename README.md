@@ -2,6 +2,17 @@
 [prplWrt](https://prplfoundation.org/working-groups/prplwrt-carrier-feed/)
 ==========
 
+## Quick start
+git clone https://github.com/prplfoundation/prplwrt.git
+cd prplwrt
+make PRODUCT=router TARGET=intel
+
+... wait ...
+
+You migt have to enter your github username & password
+
+find images in prplwrt/openwrt/bin/targets/intel/
+
 ## Motivation
 
 prplWrt is an OpenWrt overlay that simplifies development of commercial
