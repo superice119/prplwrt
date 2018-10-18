@@ -1,0 +1,28 @@
+From 0c6d905e31e4b9cb54ac12b8c445919b838dc329 Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke.mehrtens@intel.com>
+Date: Tue, 13 Feb 2018 19:31:18 +0100
+Subject: [PATCH] Revert "target: Remove nomips16 option."
+
+This reverts commit bef3f85742134f08856f9de175b85da9b2715bfb.
+---
+ include/target.mk | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/include/target.mk b/include/target.mk
+index 53d7436311..d7b72d5305 100644
+--- a/include/target.mk
++++ b/include/target.mk
+@@ -275,7 +275,9 @@ ifeq ($(DUMP),1)
+       FEATURES += virtio
+     endif
+     ifneq ($(CONFIG_CPU_MIPS32_R2),)
+-      FEATURES += mips16
++      ifneq ($(CPU_SUBTYPE),nomips16)
++        FEATURES += mips16
++      endif
+     endif
+     FEATURES += $(foreach v,6 7,$(if $(CONFIG_CPU_V$(v)),arm_v$(v)))
+ 
+-- 
+2.17.1
+

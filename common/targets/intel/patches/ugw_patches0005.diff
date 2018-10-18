@@ -1,0 +1,168 @@
+From 0d33512221f0bc0d27a1ddc3219c6b17c740465d Mon Sep 17 00:00:00 2001
+From: "Hsu, Richard1" <richard1.hsu@intel.com>
+Date: Wed, 17 Oct 2018 11:35:09 +0800
+Subject: [PATCH] UGW 8.1.1 WW39CD
+
+---
+ package/libs/safec/Makefile                   | 68 +++++++++++++++++++
+ package/libs/safec/patches/001.config.patch   | 10 +++
+ .../safec/patches/002-for-STRING-SIZE.patch   | 55 +++++++++++++++
+ 3 files changed, 133 insertions(+)
+ create mode 100755 package/libs/safec/Makefile
+ create mode 100644 package/libs/safec/patches/001.config.patch
+ create mode 100755 package/libs/safec/patches/002-for-STRING-SIZE.patch
+
+diff --git a/package/libs/safec/Makefile b/package/libs/safec/Makefile
+new file mode 100755
+index 0000000000..0f9437db87
+--- /dev/null
++++ b/package/libs/safec/Makefile
+@@ -0,0 +1,68 @@
++# 
++# Copyright (C) 2012, 2013 Cisco Systems
++#
++# This Makefile for Safe c library
++#
++
++include $(TOPDIR)/rules.mk
++
++PKG_NAME:=libsafec
++PKG_VERSION:=10052013
++PKG_RELEASE:=1
++
++PKG_SOURCE_PROTO:=git
++PKG_SOURCE_URL:=http://git.code.sf.net/p/safeclib/code
++PKG_SOURCE_SUBDIR:=$(PKG_NAME)-$(PKG_VERSION)
++PKG_SOURCE_VERSION:=HEAD
++PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
++PKG_MAINTAINER:=Bo Berry <bberryusa@users.sourceforge.net>
++PKG_MD5SUM:=440c5581d40049a195e8bcc5c4dc8aff
++PKG_MIRROR_MD5SUM:=xxx
++
++PKG_LICENSE:=CISCO SYSTEMS
++PKG_LICENSE_FILES:=COPYING
++
++PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(PKG_VERSION)
++
++PKG_FIXUP:=autoreconf
++
++PKG_INSTALL:=1
++
++
++include $(INCLUDE_DIR)/package.mk
++include $(INCLUDE_DIR)/target.mk
++
++define Package/safeclibs/default
++  TITLE:=Safec library build
++  SECTION:=libs
++  CATEGORY:=Libraries
++  PROVIDES:=libsafec
++  URL:=http://sourceforge.net/projects/safeclib
++  VERSION:=10052013
++endef
++
++define Package/safeclibs
++  $(call Package/safeclibs/default)
++  TITLE+= (default safec library)
++endef
++
++define Package/safeclibs/description
++ This package contains the safec  shared library.
++endef
++
++define Build/InstallDev
++	$(INSTALL_DIR) $(1)/usr/include
++	$(CP) $(PKG_INSTALL_DIR)/usr/include/libsafec/* $(1)/usr/include
++	$(INSTALL_DIR) $(1)/usr/lib
++	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsafec-1.0.{a,so*} $(1)/usr/lib/
++	$(INSTALL_DIR) $(1)/usr/lib/pkgconfig
++	$(CP) $(PKG_INSTALL_DIR)/usr/lib/pkgconfig/safec-1.0.pc $(1)/usr/lib/pkgconfig/
++endef
++
++define Package/safeclibs/install
++	$(INSTALL_DIR) $(1)/usr/lib/
++	$(CP) $(PKG_INSTALL_DIR)/usr/lib/libsafec-1.0.so* $(1)/usr/lib/
++endef
++
++
++$(eval $(call BuildPackage,safeclibs))
+diff --git a/package/libs/safec/patches/001.config.patch b/package/libs/safec/patches/001.config.patch
+new file mode 100644
+index 0000000000..588442b6c5
+--- /dev/null
++++ b/package/libs/safec/patches/001.config.patch
+@@ -0,0 +1,10 @@
++--- a/configure.ac
+++++ b/configure.ac
++@@ -61,6 +61,7 @@ AM_INIT_AUTOMAKE([1.10 no-define foreign
++ 
++ # Check if automake supports 'pretty' builds, if so enable them by default
++ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+++m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
++ 
++ # Enable LibTool as we are building a library
++ #LT_PREREQ([2.2.6])    # TODO: don't really know what to put here so leave
+diff --git a/package/libs/safec/patches/002-for-STRING-SIZE.patch b/package/libs/safec/patches/002-for-STRING-SIZE.patch
+new file mode 100755
+index 0000000000..e61abb8671
+--- /dev/null
++++ b/package/libs/safec/patches/002-for-STRING-SIZE.patch
+@@ -0,0 +1,55 @@
++--- a/include/safe_mem_lib.h
+++++ b/include/safe_mem_lib.h
++@@ -39,6 +39,11 @@
++ #define RSIZE_MAX_MEM16    ( RSIZE_MAX_MEM/2 )
++ #define RSIZE_MAX_MEM32    ( RSIZE_MAX_MEM/4 )
++ 
+++#ifdef __cplusplus
+++extern "C"
+++{
+++#endif
+++
++ /* set memory constraint handler */
++ extern constraint_handler_t
++ set_mem_constraint_handler_s(constraint_handler_t handler);
++@@ -102,5 +107,8 @@ extern errno_t memzero16_s(uint16_t *des
++ /* uint32_t zero */
++ extern errno_t memzero32_s(uint32_t *dest, rsize_t dmax);
++ 
+++#ifdef __cplusplus
+++}
+++#endif 
++ 
++ #endif  /* __SAFE_MEM_LIB_H__ */
++--- a/include/safe_str_lib.h
+++++ b/include/safe_str_lib.h
++@@ -40,8 +40,8 @@
++ #define RSIZE_MIN_STR      ( 1 )
++ 
++ /* maximum sring length */
++-#define RSIZE_MAX_STR      ( 4UL << 10 )      /* 4KB */
++-
+++//#define RSIZE_MAX_STR      ( 4UL << 10 )      /* 4KB */
+++#define RSIZE_MAX_STR      ( 32UL << 10 )      /* 32KB */
++ 
++ /* The makeup of a password */
++ #define SAFE_STR_MIN_LOWERCASE     ( 2 )
++@@ -52,6 +52,10 @@
++ #define SAFE_STR_PASSWORD_MIN_LENGTH   ( 6 )
++ #define SAFE_STR_PASSWORD_MAX_LENGTH   ( 32 )
++ 
+++#ifdef __cplusplus
+++extern "C"
+++{
+++#endif
++ 
++ /* set string constraint handler */
++ extern constraint_handler_t
++@@ -257,4 +261,7 @@ extern errno_t
++ strzero_s(char *dest, rsize_t dmax);
++ 
++ 
+++#ifdef __cplusplus
+++}
+++#endif
++ #endif   /* __SAFE_STR_LIB_H__ */
+-- 
+2.17.1
+

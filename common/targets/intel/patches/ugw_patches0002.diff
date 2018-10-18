@@ -1,0 +1,36 @@
+From 1bd3d78b2e73d34f806e539754d30ebf2b68bb6d Mon Sep 17 00:00:00 2001
+From: Hauke Mehrtens <hauke.mehrtens@intel.com>
+Date: Fri, 16 Feb 2018 18:11:55 +0100
+Subject: [PATCH] download: Skip hash check if no PKG_HASH was provided
+
+The script in scripts/download.pl checks if the hash is equal to skip and
+skips the hash check then, but the default value when no hash is given is x.
+This causes an error when no hash value is given because the download.pl
+script cannot find appropriate algorithm and aborts.
+
+Signed-off-by: Hauke Mehrtens <hauke.mehrtens@intel.com>
+---
+ include/download.mk | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/download.mk b/include/download.mk
+index 2ba8a7bdf4..b14ce2a39a 100644
+--- a/include/download.mk
++++ b/include/download.mk
+@@ -239,11 +239,11 @@ define Download/Defaults
+   URL_FILE:=
+   PROTO:=
+   HASH=$$(MD5SUM)
+-  MD5SUM:=x
++  MD5SUM:=skip
+   SUBDIR:=
+   MIRROR:=1
+   MIRROR_HASH=$$(MIRROR_MD5SUM)
+-  MIRROR_MD5SUM:=x
++  MIRROR_MD5SUM:=skip
+   VERSION:=
+   OPTS:=
+ endef
+-- 
+2.17.1
+
