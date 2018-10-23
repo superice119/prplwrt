@@ -16,6 +16,35 @@ define Target/intel
     CONFIG_TARGET_intel_mips_xrx500_Default=y \
     CONFIG_TARGET_ROOTFS_JFFS2=n \
     CONFIG_KERNEL_MODULES=y \
+    CONFIG_PACKAGE_vrx518_aca_fw=y \
+    CONFIG_PACKAGE_vrx518_ppe_fw=y \
+    CONFIG_PACKAGE_dsl-cpe-api-vrx=y \
+    CONFIG_dsl-cpe-api-vrx_MODEL_FULL=y \
+    CONFIG_PACKAGE_dsl-cpe-control-vrx=y \
+    CONFIG_dsl-cpe-control-vrx_MODEL_FULL=y \
+    CONFIG_PACKAGE_dsl-cpe-mei-vrx=y \
+    CONFIG_dsl-cpe-mei-vrx_DEVICE_VR11=y \
+    CONFIG_dsl-cpe-mei-vrx_MODEL_DEBUG=y \
+    CONFIG_dsl-cpe-mei-vrx_MEI_PREDEF_DBG_BAR=y \
+    CONFIG_dsl-cpe-mei-vrx_MEI_DEBUG_STREAM_SUPPORT=y \
+    CONFIG_dsl-cpe-mei-vrx_DTM_STANDALONE=y \
+    CONFIG_dsl-cpe-mei-vrx_IRQ_POLLING_ACTIVE=y \
+    CONFIG_dsl-cpe-mei-vrx_PPA_WITH_TC_CB=y \
+    CONFIG_PACKAGE_dsl-vr11-firmware-xdsl=y \
+    CONFIG_dsl-vr11-firmware-xdsl_FW_IN_ROOTFS=y \
+    CONFIG_PACKAGE_ppacmd=y \
+    CONFIG_PACKAGE_kmod-directconnect-dp=y \
+    CONFIG_PACKAGE_kmod-ppa-drv=y \
+    CONFIG_PACKAGE_kmod-ppa-drv-grx500=y \
+    CONFIG_PACKAGE_kmod-ppa-drv-grx500-mpe=y \
+    CONFIG_PACKAGE_kmod-ppa-drv-stack-al=y \
+    CONFIG_PACKAGE_kmod-vrx518_ep=y \
+    CONFIG_PACKAGE_kmod-vrx518_tc_drv=y \
+    CONFIG_PACKAGE_kmod-ifxos=y \
+    CONFIG_PACKAGE_kmod-intel_eth_drv_xrx500=y \
+    CONFIG_PACKAGE_kmod-intel_eth_toe_drv_xrx500=y \
+    CONFIG_PACKAGE_kmod-intel_eth_xrx500_fw=y \
+    CONFIG_PACKAGE_ltq-gphy-fw-xrx5xx=y \
     %22%20CONFIG_TARGET_ar71xx_generic%20is%20not%20set \
     %22%20CONFIG_TARGET_ar71xx_generic_DEVICE_A02RBW300N%20is%20not%20set \
     %22%20CONFIG_TARGET_ar71xx_generic_DEVICE_A60%20is%20not%20set%20\
