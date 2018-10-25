@@ -388,6 +388,6 @@ define Target/intel/prepare
     cd $(BASE_DIR)/$(OPENWRT_DIR)/; \
     ./scripts/feeds update -a; \
     ./scripts/feeds install intel_mips ltq_fw_PHY_IP luci dsl-vr11-firmware-xdsl dsl-cpe-mei-vrx dsl-cpe-api-vrx dsl-cpe-control-vrx ifxos directconnect_dp vrx518_aca_fw vrx518_ppe_fw vrx518_tc_drv ppa;
-    rm tmp -rf 
+    rm -rf $(BASE_DIR)/$(OPENWRT_DIR)/tmp/
 
 endef
