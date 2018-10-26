@@ -8,10 +8,25 @@
 define Product/router
 
 	CONFIG += \
-		CONFIG_PACKAGE_luci=y \
-		CONFIG_PACKAGE_juci=n \
-		CONFIG_PACKAGE_owsd=n 
-			
+		CONFIG_PACKAGE_uhttpd=n \
+		CONFIG_PACKAGE_luci=n \
+		CONFIG_PACKAGE_owsd=y \
+		CONFIG_PACKAGE_juci=y \
+		CONFIG_PACKAGE_juci-dnsmasq-dhcp=y \
+		CONFIG_PACKAGE_juci-dropbear=y \
+		CONFIG_PACKAGE_juci-event=y \
+		CONFIG_PACKAGE_juci-firewall-fw3=y \
+		CONFIG_PACKAGE_juci-mod-system=y \
+		CONFIG_PACKAGE_juci-mwan3=y \
+		CONFIG_PACKAGE_juci-network-device=y \
+		CONFIG_PACKAGE_juci-network-dsl=y \
+		CONFIG_PACKAGE_juci-network-netifd=y \
+		CONFIG_PACKAGE_juci-qos=y \
+		CONFIG_PACKAGE_juci-realtime-graphs=y \
+		CONFIG_PACKAGE_juci-usb=y \
+		CONFIG_PACKAGE_juci-wireless=y \
+		CONFIG_PACKAGE_juci-theme-prpl=y \
+		CONFIG_PACKAGE_prpl-demo-utils=y
 endef
 
 define Customization/default
