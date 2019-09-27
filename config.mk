@@ -2,9 +2,9 @@
 # OpenWrt SVN revision/branch/tag
 # CONFIG_OPENWRT_PATH = branches/attitude_adjustment
 # CONFIG_OPENWRT_REV  = 40431
-OPENWRT_TAG   := v18.06.1
+OPENWRT_TAG   := v18.06.2
 
-FEEDS_FILE 		:= prpl_feeds.conf
+FEEDS_FILE    := prpl_feeds.conf
 
 CONFIG_PACKAGES_LIST = juci rpcd
 
