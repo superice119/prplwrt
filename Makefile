@@ -12,20 +12,23 @@ include config.mk
 #  Internal variables
 # ======================================================================
 
+SHELL := /bin/bash
+
 V ?= 0
 
 j ?= 24
 
 OPENWRT_DIR   := openwrt
-OPENWRT_URL   := https://git.openwrt.org/openwrt/openwrt.git
+#OPENWRT_URL   := https://git.openwrt.org/openwrt/openwrt.git
+OPENWRT_URL   := https://github.com/openwrt/openwrt.git 
 #OPENWRT_URL   := /Volumes/Openwrt/repositories/openwrt/
 VERSION       := $(shell git describe --always | cut -c2-)
-FEEDS					:= $(shell cat ${FEEDS_FILE})
+FEEDS         := $(shell cat ${FEEDS_FILE})
 
 FWSUBDIR      := $(subst default,,$(CUSTOMIZATION))
-CHDIR_SHELL 	:= $(SHELL)
+CHDIR_SHELL   := $(SHELL)
 
-BASE_DIR			:= $(PWD)
+BASE_DIR      := $(PWD)
 
 define chdir
    $(eval _D=$(firstword $(1) $(@D)))
@@ -49,7 +52,7 @@ define InstallPackages
 endef
 
 define InstallFeeds
-	if [ -a $(OPENWRT_DIR)/feeds.conf ] ; \
+	if [ -a "$(OPENWRT_DIR)/feeds.conf" ] ; \
 	then \
 	     rm $(OPENWRT_DIR)/feeds.conf ; \
 	fi;
