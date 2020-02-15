@@ -267,10 +267,10 @@ _build-images:
 	echo $(CUSTOMIZATION) > $(OPENWRT_DIR)/files/etc/carrierwrt_customization
 	
 	# Apply product changes
-	-cp -rL products/$(PRODUCT)/files/* $(OPENWRT_DIR)/files/
+	#-cp -rL products/$(PRODUCT)/files/* $(OPENWRT_DIR)/files/
 
 	# Apply target changes
-	-cp -rL products/$(PRODUCT)/targets/$(TARGET)/files/* $(OPENWRT_DIR)/files/
+	#-cp -rL products/$(PRODUCT)/targets/$(TARGET)/files/* $(OPENWRT_DIR)/files/
 
 	# Target prepare
 	$(Target/$(TARGET)/prepare)
@@ -293,7 +293,8 @@ _build-images:
 	# Build
 	$(call Build,$(CONFIG))
 
-	# Install $    (call Install,$(IMAGES),$(TESTED))
+	#Install 
+	$(call Install,$(IMAGES),$(TESTED))
 
 $(OPENWRT_DIR):
 	git clone $(OPENWRT_URL) $@

@@ -365,12 +365,12 @@ define Target/intel/prepare
 
     ## init repo and sync
     cd $(BASE_DIR)/common/targets/intel/intel_repo; \
-    repo init -u https://github.com/prplfoundation/intel_repo.git -b github; \
-    repo sync;
+    ##repo init -u https://github.com/prplfoundation/intel_repo.git -b github; \
+    ##repo sync;
 
     # remove broken patch
-    -rm $(BASE_DIR)/common/targets/intel/intel_repo/feed_intel/intel_mips/patches-4.9/101-revert-mips_highmem_offset.patch
-    -rm $(BASE_DIR)/common/targets/intel/intel_repo/feed_intel/intel_mips/patches-4.9/200-add-intel-xrx500.patch
+    ##-rm $(BASE_DIR)/common/targets/intel/intel_repo/feed_intel/intel_mips/patches-4.9/101-revert-mips_highmem_offset.patch
+    ##-rm $(BASE_DIR)/common/targets/intel/intel_repo/feed_intel/intel_mips/patches-4.9/200-add-intel-xrx500.patch
 
     # copy files over to openwrt build directory
     mkdir -p $(BASE_DIR)/$(OPENWRT_DIR)/dl/
